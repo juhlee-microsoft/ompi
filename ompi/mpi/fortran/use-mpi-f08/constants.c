@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2018 Research Organization for Information Science
  *                         and Technology (RIST). All rights reserved.
  *
+ * Copyright (c) 2018      FUJITSU LIMITED.  All rights reserved.
  * $COPYRIGHT$
  *
  * This file provides symbols for the derived type values needed
@@ -49,6 +50,7 @@ OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_bxor
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_maxloc   = {OMPI_MPI_MAXLOC};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_minloc   = {OMPI_MPI_MINLOC};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_replace  = {OMPI_MPI_REPLACE};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_no_op    = {OMPI_MPI_NO_OP};
 
 /*
  * NULL "handles" (indices)
@@ -65,7 +67,7 @@ OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_win_
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_file_null       = {OMPI_MPI_FILE_NULL};
 
 /*
- * common block items from ompi/include/mpif-common.h
+ * common block items from ompi/include/mpif-handles.h
  */
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_aint              = {OMPI_MPI_AINT};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_byte              = {OMPI_MPI_BYTE};
@@ -113,6 +115,10 @@ OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_co
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_float_complex   = {OMPI_MPI_C_FLOAT_COMPLEX};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_double_complex  = {OMPI_MPI_C_DOUBLE_COMPLEX};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_long_double_complex  = {OMPI_MPI_C_LONG_DOUBLE_COMPLEX};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_complex       = {OMPI_MPI_CXX_COMPLEX};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_float_complex = {OMPI_MPI_CXX_FLOAT_COMPLEX};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_double_complex = {OMPI_MPI_CXX_DOUBLE_COMPLEX};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_long_double_complex = {OMPI_MPI_CXX_LONG_DOUBLE_COMPLEX};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_complex           = {OMPI_MPI_COMPLEX};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_complex8          = {OMPI_MPI_COMPLEX8};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_complex16         = {OMPI_MPI_COMPLEX16};
@@ -135,5 +141,23 @@ OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_logi
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_logical4          = {OMPI_MPI_LOGICAL4};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_logical8          = {OMPI_MPI_LOGICAL8};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_bool            = {OMPI_MPI_C_BOOL};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_bool          = {OMPI_MPI_CXX_BOOL};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_count             = {OMPI_MPI_COUNT};
 OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_offset            = {OMPI_MPI_OFFSET};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_complex4          = {OMPI_MPI_COMPLEX4};
+
+/*
+ * Handles not defined in ompi/include/mpif-handles.h but defined
+ * in 'shortfloat' MPI extensions (ompi/mpiext/shortfloat)
+ *
+ * OMPI_MPI_* macros are not defined in ompi/include/mpif-values.pl
+ * because they should not be included in mpif.h. So immediate values
+ * defined in ompi/datatype/ompi_datatype_module.c are used here.
+ * ompi_f08_mpi_c_float16 is a synonym for ompi_f08_mpi_short_float.
+ */
+#if defined(HAVE_SHORT_FLOAT) || defined(HAVE_OPAL_SHORT_FLOAT_T)
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_short_float       = {74};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_short_float_complex = {75};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_cxx_short_float_complex = {76};
+OMPI_DECLSPEC ompi_fortran_08_handle_t OMPI_F08_HANDLE_ALIGNED ompi_f08_mpi_c_float16         = {74};
+#endif

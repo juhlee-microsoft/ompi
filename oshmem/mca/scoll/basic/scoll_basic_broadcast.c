@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2013      Mellanox Technologies, Inc.
  *                         All rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -11,8 +13,6 @@
 #include "oshmem_config.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "orte/mca/grpcomm/grpcomm.h"
 
 #include "opal/util/bit_ops.h"
 
@@ -41,6 +41,7 @@ int mca_scoll_basic_broadcast(struct oshmem_group_t *group,
                               const void *source,
                               size_t nlong,
                               long *pSync,
+                              bool nlong_type,
                               int alg)
 {
     int rc = OSHMEM_SUCCESS;
@@ -54,6 +55,11 @@ int mca_scoll_basic_broadcast(struct oshmem_group_t *group,
     /* Check if this PE is part of the group */
     if ((rc == OSHMEM_SUCCESS) && oshmem_proc_group_is_member(group)) {
         int i = 0;
+
+        /* Do nothing on zero-length request */
+        if (OPAL_UNLIKELY(nlong_type && !nlong)) {
+            return OSHMEM_SUCCESS;
+        }
 
         if (pSync) {
             alg = (alg == SCOLL_DEFAULT_ALG ?

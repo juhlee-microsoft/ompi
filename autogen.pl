@@ -5,8 +5,8 @@
 # Copyright (c) 2013      Mellanox Technologies, Inc.
 #                         All rights reserved.
 # Copyright (c) 2013-2014 Intel, Inc.  All rights reserved.
-# Copyright (c) 2015-2016 Research Organization for Information Science
-#                         and Technology (RIST). All rights reserved.
+# Copyright (c) 2015-2019 Research Organization for Information Science
+#                         and Technology (RIST).  All rights reserved.
 # Copyright (c) 2015      IBM Corporation.  All rights reserved.
 #
 # $COPYRIGHT$
@@ -84,8 +84,8 @@ if ($^O eq "solaris") {
     $patch_prog = "gpatch";
 }
 
-$username = getpwuid($>);
-$full_hostname = `hostname`;
+$username = $ENV{USER} || getpwuid($>);
+$full_hostname = $ENV{HOSTNAME} || `hostname`;
 chomp($full_hostname);
 $hostname = $full_hostname;
 $hostname =~ s/^([\w\-]+)\..+/\1/;
@@ -1190,9 +1190,6 @@ if (-e "orcm") {
 
 #---------------------------------------------------------------------------
 
-$full_hostname = `hostname`;
-chomp($full_hostname);
-
 $m4 = "dnl
 dnl \$HEADER\$
 dnl
@@ -1350,7 +1347,7 @@ push(@{$projects}, { name => "orte", dir => "orte", need_base => 1 })
 push(@{$projects}, { name => "ompi", dir => "ompi", need_base => 1 })
     if (!$no_ompi_arg);
 push(@{$projects}, { name => "oshmem", dir => "oshmem", need_base => 1 })
-    if (!$no_ompi_arg && !$no_orte_arg && !$no_oshmem_arg);
+    if (!$no_ompi_arg && !$no_oshmem_arg);
 push(@{$projects}, { name => "orcm", dir => "orcm", need_base => 1 })
     if (-e "orcm");
 

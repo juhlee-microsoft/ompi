@@ -19,6 +19,8 @@
  * Copyright (c) 2016-2017 IBM Corporation. All rights reserved.
  * Copyright (c) 2018      Cisco Systems, Inc.  All rights reserved
  * Copyright (c) 2018      Amazon.com, Inc. or its affiliates.  All Rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -382,8 +384,6 @@ static int ompi_osc_rdma_component_query (struct ompi_win_t *win, void **base, s
     return mca_osc_rdma_component.priority;
 }
 
-#define RANK_ARRAY_COUNT(module) ((ompi_comm_size ((module)->comm) + (module)->node_count - 1) / (module)->node_count)
-
 static int ompi_osc_rdma_initialize_region (ompi_osc_rdma_module_t *module, void **base, size_t size) {
     ompi_osc_rdma_region_t *region = (ompi_osc_rdma_region_t *) module->state->regions;
     int ret;
@@ -586,16 +586,16 @@ static int allocate_state_shared (ompi_osc_rdma_module_t *module, void **base, s
             }
         }
 
-        /* allocate the shared memory segment */
-        ret = opal_asprintf (&data_file, "%s" OPAL_PATH_SEP "osc_rdma.%s.%x.%d",
-                        mca_osc_rdma_component.backing_directory, ompi_process_info.nodename,
-                        OMPI_PROC_MY_NAME->jobid, ompi_comm_get_cid(module->comm));
-        if (0 > ret) {
-            ret = OMPI_ERR_OUT_OF_RESOURCE;
-            break;
-        }
-
         if (0 == local_rank) {
+            /* allocate the shared memory segment */
+            ret = opal_asprintf (&data_file, "%s" OPAL_PATH_SEP "osc_rdma.%s.%x.%d",
+                            mca_osc_rdma_component.backing_directory, ompi_process_info.nodename,
+                            OMPI_PROC_MY_NAME->jobid, ompi_comm_get_cid(module->comm));
+            if (0 > ret) {
+                ret = OMPI_ERR_OUT_OF_RESOURCE;
+                break;
+            }
+
             /* allocate enough space for the state + data for all local ranks */
             ret = opal_shmem_segment_create (&module->seg_ds, data_file, total_size);
             free (data_file);
@@ -722,7 +722,13 @@ static int allocate_state_shared (ompi_osc_rdma_module_t *module, void **base, s
 
             ompi_osc_module_add_peer (module, peer);
 
-            if (MPI_WIN_FLAVOR_DYNAMIC == module->flavor || 0 == temp[i].size) {
+            if (MPI_WIN_FLAVOR_DYNAMIC == module->flavor) {
+                if (module->use_cpu_atomics && peer_rank == my_rank) {
+                    peer->flags |= OMPI_OSC_RDMA_PEER_LOCAL_BASE;
+                }
+                /* nothing more to do */
+                continue;
+            } else if (0 == temp[i].size) {
                 /* nothing more to do */
                 continue;
             }

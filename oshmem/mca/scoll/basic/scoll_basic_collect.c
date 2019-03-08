@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2013-2015 Mellanox Technologies, Inc.
  *                         All rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -11,8 +13,6 @@
 #include "oshmem_config.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "orte/mca/grpcomm/grpcomm.h"
 
 #include "oshmem/constants.h"
 #include "oshmem/mca/spml/spml.h"
@@ -67,6 +67,12 @@ int mca_scoll_basic_collect(struct oshmem_group_t *group,
         int i = 0;
 
         if (nlong_type) {
+
+            /* Do nothing on zero-length request */
+            if (OPAL_UNLIKELY(!nlong)) {
+                return OPAL_SUCCESS;
+            }
+
             alg = (alg == SCOLL_DEFAULT_ALG ?
                     mca_scoll_basic_param_collect_algorithm : alg);
             switch (alg) {
@@ -193,6 +199,7 @@ static int _algorithm_f_central_counter(struct oshmem_group_t *group,
                     target,
                     group->proc_count * nlong,
                     (pSync + 1),
+                    true,
                     SCOLL_DEFAULT_ALG);
     }
 
@@ -303,6 +310,7 @@ static int _algorithm_f_tournament(struct oshmem_group_t *group,
                 target,
                 group->proc_count * nlong,
                 (pSync + 1),
+                true,
                 SCOLL_DEFAULT_ALG);
     }
 
@@ -624,6 +632,7 @@ static int _algorithm_central_collector(struct oshmem_group_t *group,
                 target,
                 offset,
                 (pSync + 1),
+                false,
                 SCOLL_DEFAULT_ALG);
     }
 

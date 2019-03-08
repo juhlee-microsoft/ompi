@@ -4,9 +4,10 @@
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2009      Oak Ridge National Labs.  All rights reserved.
- * Copyright (c) 2015-2017 Research Organization for Information Science
- *                         and Technology (RIST). All rights reserved.
+ * Copyright (c) 2015-2018 Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * Copyright (c) 2015      Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2018      FUJITSU LIMITED.  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -39,18 +40,17 @@
  * Return value: Number of elements of type TYPE copied
  */
 #define COPY_TYPE( TYPENAME, TYPE, COUNT )                                              \
-static int copy_##TYPENAME( opal_convertor_t *pConvertor, uint32_t count,               \
-                            char* from, size_t from_len, ptrdiff_t from_extent, \
-                            char* to, size_t to_len, ptrdiff_t to_extent,       \
-                            ptrdiff_t *advance)                                 \
+static int copy_##TYPENAME( opal_convertor_t *pConvertor, size_t count,                 \
+                            char* from, size_t from_len, ptrdiff_t from_extent,         \
+                            char* to, size_t to_len, ptrdiff_t to_extent,               \
+                            ptrdiff_t *advance)                                         \
 {                                                                                       \
-    uint32_t i;                                                                         \
     size_t remote_TYPE_size = sizeof(TYPE) * (COUNT); /* TODO */                        \
     size_t local_TYPE_size = (COUNT) * sizeof(TYPE);                                    \
                                                                                         \
     /* make sure the remote buffer is large enough to hold the data */                  \
     if( (remote_TYPE_size * count) > from_len ) {                                       \
-        count = (uint32_t)(from_len / remote_TYPE_size);                                \
+        count = from_len / remote_TYPE_size;                                            \
         if( (count * remote_TYPE_size) != from_len ) {                                  \
             DUMP( "oops should I keep this data somewhere (excedent %d bytes)?\n",      \
                   from_len - (count * remote_TYPE_size) );                              \
@@ -67,7 +67,7 @@ static int copy_##TYPENAME( opal_convertor_t *pConvertor, uint32_t count,       
         MEMCPY( to, from, count * local_TYPE_size );                                    \
     } else {                                                                            \
         /* source or destination are non-contigous */                                   \
-        for( i = 0; i < count; i++ ) {                                                  \
+        for(size_t i = 0; i < count; i++ ) {                                            \
             MEMCPY( to, from, local_TYPE_size );                                        \
             to += to_extent;                                                            \
             from += from_extent;                                                        \
@@ -92,17 +92,16 @@ static int copy_##TYPENAME( opal_convertor_t *pConvertor, uint32_t count,       
  * Return value: Number of elements of type TYPE copied
  */
 #define COPY_CONTIGUOUS_BYTES( TYPENAME, COUNT )                                          \
-static int copy_##TYPENAME##_##COUNT( opal_convertor_t *pConvertor, uint32_t count,       \
-                                      char* from, size_t from_len, ptrdiff_t from_extent, \
-                                      char* to, size_t to_len, ptrdiff_t to_extent,       \
-                                      ptrdiff_t *advance )              \
+static size_t copy_##TYPENAME##_##COUNT( opal_convertor_t *pConvertor, size_t count,         \
+                                         char* from, size_t from_len, ptrdiff_t from_extent, \
+                                         char* to, size_t to_len, ptrdiff_t to_extent,       \
+                                         ptrdiff_t *advance )              \
 {                                                                               \
-    uint32_t i;                                                                 \
     size_t remote_TYPE_size = (size_t)(COUNT); /* TODO */                       \
     size_t local_TYPE_size = (size_t)(COUNT);                                   \
                                                                                 \
     if( (remote_TYPE_size * count) > from_len ) {                               \
-        count = (uint32_t)(from_len / remote_TYPE_size);                        \
+        count = from_len / remote_TYPE_size;                                    \
         if( (count * remote_TYPE_size) != from_len ) {                          \
             DUMP( "oops should I keep this data somewhere (excedent %d bytes)?\n", \
                   from_len - (count * remote_TYPE_size) );                      \
@@ -117,7 +116,7 @@ static int copy_##TYPENAME##_##COUNT( opal_convertor_t *pConvertor, uint32_t cou
         (to_extent == (ptrdiff_t)remote_TYPE_size) ) {                  \
         MEMCPY( to, from, count * local_TYPE_size );                            \
     } else {                                                                    \
-        for( i = 0; i < count; i++ ) {                                          \
+        for(size_t i = 0; i < count; i++ ) {                                    \
             MEMCPY( to, from, local_TYPE_size );                                \
             to += to_extent;                                                    \
             from += from_extent;                                                \
@@ -151,79 +150,93 @@ COPY_CONTIGUOUS_BYTES( bytes, 8 )
 COPY_CONTIGUOUS_BYTES( bytes, 16 )
 #endif
 
-#if SIZEOF_FLOAT == 2
+#if defined(HAVE_SHORT_FLOAT) && SIZEOF_SHORT_FLOAT == 2
+COPY_TYPE( float_2, short float, 1 )
+#elif SIZEOF_FLOAT == 2
 COPY_TYPE( float_2, float, 1 )
 #elif SIZEOF_DOUBLE == 2
 COPY_TYPE( float_2, double, 1 )
-#elif HAVE_LONG_DOUBLE && SIZEOF_LONG_DOUBLE == 2
+#elif SIZEOF_LONG_DOUBLE == 2
 COPY_TYPE( float_2, long double, 1 )
+#elif defined(HAVE_OPAL_SHORT_FLOAT_T) && SIZEOF_OPAL_SHORT_FLOAT_T == 2
+COPY_TYPE( float_2, opal_short_float_t, 1 )
 #else
 /* #error No basic type for copy function for opal_datatype_float2 found */
 #define copy_float_2 NULL
 #endif
 
-#if SIZEOF_FLOAT == 4
+#if defined(HAVE_SHORT_FLOAT) && SIZEOF_SHORT_FLOAT == 4
+COPY_TYPE( float_4, short float, 1 )
+#elif SIZEOF_FLOAT == 4
 COPY_TYPE( float_4, float, 1 )
 #elif SIZEOF_DOUBLE == 4
 COPY_TYPE( float_4, double, 1 )
-#elif HAVE_LONG_DOUBLE && SIZEOF_LONG_DOUBLE == 4
+#elif SIZEOF_LONG_DOUBLE == 4
 COPY_TYPE( float_4, long double, 1 )
+#elif defined(HAVE_OPAL_SHORT_FLOAT_T) && SIZEOF_OPAL_SHORT_FLOAT_T == 4
+COPY_TYPE( float_4, opal_short_float_t, 1 )
 #else
 #error No basic type for copy function for opal_datatype_float4 found
 #endif
 
-#if SIZEOF_FLOAT == 8
+#if defined(HAVE_SHORT_FLOAT) && SIZEOF_SHORT_FLOAT == 8
+COPY_TYPE( float_8, short float, 1 )
+#elif SIZEOF_FLOAT == 8
 COPY_TYPE( float_8, float, 1 )
 #elif SIZEOF_DOUBLE == 8
 COPY_TYPE( float_8, double, 1 )
-#elif HAVE_LONG_DOUBLE && SIZEOF_LONG_DOUBLE == 8
+#elif SIZEOF_LONG_DOUBLE == 8
 COPY_TYPE( float_8, long double, 1 )
+#elif defined(HAVE_OPAL_SHORT_FLOAT_T) && SIZEOF_OPAL_SHORT_FLOAT_T == 8
+COPY_TYPE( float_8, opal_short_float_t, 1 )
 #else
 #error No basic type for copy function for opal_datatype_float8 found
 #endif
 
-#if SIZEOF_FLOAT == 12
+#if defined(HAVE_SHORT_FLOAT) && SIZEOF_SHORT_FLOAT == 12
+COPY_TYPE( float_12, short float, 1 )
+#elif SIZEOF_FLOAT == 12
 COPY_TYPE( float_12, float, 1 )
 #elif SIZEOF_DOUBLE == 12
 COPY_TYPE( float_12, double, 1 )
-#elif HAVE_LONG_DOUBLE && SIZEOF_LONG_DOUBLE == 12
+#elif SIZEOF_LONG_DOUBLE == 12
 COPY_TYPE( float_12, long double, 1 )
+#elif defined(HAVE_OPAL_SHORT_FLOAT_T) && SIZEOF_OPAL_SHORT_FLOAT_T == 12
+COPY_TYPE( float_12, opal_short_float_t, 1 )
 #else
 /* #error No basic type for copy function for opal_datatype_float12 found */
 #define copy_float_12 NULL
 #endif
 
-#if SIZEOF_FLOAT == 16
+#if defined(HAVE_SHORT_FLOAT) && SIZEOF_SHORT_FLOAT == 16
+COPY_TYPE( float_16, short float, 1 )
+#elif SIZEOF_FLOAT == 16
 COPY_TYPE( float_16, float, 1 )
 #elif SIZEOF_DOUBLE == 16
 COPY_TYPE( float_16, double, 1 )
-#elif HAVE_LONG_DOUBLE && SIZEOF_LONG_DOUBLE == 16
+#elif SIZEOF_LONG_DOUBLE == 16
 COPY_TYPE( float_16, long double, 1 )
+#elif defined(HAVE_OPAL_SHORT_FLOAT_T) && SIZEOF_OPAL_SHORT_FLOAT_T == 16
+COPY_TYPE( float_16, opal_short_float_t, 1 )
 #else
 /* #error No basic type for copy function for opal_datatype_float16 found */
 #define copy_float_16 NULL
 #endif
 
-#if HAVE_FLOAT__COMPLEX
+#if defined(HAVE_SHORT_FLOAT__COMPLEX)
+COPY_TYPE ( short_float_complex, short float _Complex, 1)
+#elif defined(HAVE_OPAL_SHORT_FLOAT_COMPLEX_T)
+COPY_TYPE ( short_float_complex, opal_short_float_complex_t, 1)
+#else
+/* #error No basic type for copy function for opal_datatype_short_float_complex found */
+#define copy_short_float_complex NULL
+#endif
+
 COPY_TYPE ( float_complex, float _Complex, 1)
-#else
-/* #error No basic type for copy function for opal_datatype_float_complex found */
-#define copy_float_complex NULL
-#endif
 
-#if HAVE_DOUBLE__COMPLEX
 COPY_TYPE ( double_complex, double _Complex, 1)
-#else
-/* #error No basic type for copy function for opal_datatype_double_complex found */
-#define copy_double_complex NULL
-#endif
 
-#if HAVE_LONG_DOUBLE__COMPLEX
 COPY_TYPE ( long_double_complex, long double _Complex, 1)
-#else
-/* #error No basic type for copy function for opal_datatype_long_double_complex found */
-#define copy_long_double_complex NULL
-#endif
 
 #if SIZEOF__BOOL == SIZEOF_CHAR
 COPY_TYPE (bool, char, 1)
@@ -262,6 +275,7 @@ conversion_fct_t opal_datatype_copy_functions[OPAL_DATATYPE_MAX_PREDEFINED] = {
     (conversion_fct_t)copy_float_8,              /* OPAL_DATATYPE_FLOAT8       */
     (conversion_fct_t)copy_float_12,             /* OPAL_DATATYPE_FLOAT12       */
     (conversion_fct_t)copy_float_16,             /* OPAL_DATATYPE_FLOAT16      */
+    (conversion_fct_t)copy_short_float_complex,  /* OPAL_DATATYPE_SHORT_FLOAT_COMPLEX */
     (conversion_fct_t)copy_float_complex,        /* OPAL_DATATYPE_FLOAT_COMPLEX */
     (conversion_fct_t)copy_double_complex,       /* OPAL_DATATYPE_DOUBLE_COMPLEX */
     (conversion_fct_t)copy_long_double_complex,  /* OPAL_DATATYPE_LONG_DOUBLE_COMPLEX */

@@ -89,8 +89,6 @@ int ompi_sync_wait_mt(ompi_wait_sync_t *sync)
     }
     OPAL_THREAD_ADD_FETCH32(&num_thread_in_progress, -1);
 
-    assert(sync == wait_sync_list);
-
  i_am_done:
     /* My sync is now complete. Trim the list: remove self, wake next */
     OPAL_THREAD_LOCK(&wait_sync_lock);

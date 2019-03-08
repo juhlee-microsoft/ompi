@@ -63,6 +63,59 @@ Much, much more information is also available in the Open MPI FAQ:
 
 ===========================================================================
 
+Quick start
+-----------
+
+In many cases, Open MPI can be built and installed by simply
+indicating the installation directory on the command line:
+
+$ tar xf openmpi-<version>.tar.bz2
+$ cd openmpi-<version>
+$ ./configure --prefix=<path> |& tee config.out
+...lots of output...
+$ make -j 8 |& tee make.out
+...lots of output...
+$ make install |& tee install.out
+...lots of output...
+
+Note that there are many, many configuration options to the
+"./configure" step.  Some of them may be needed for your particular
+environmnet; see below for desciptions of the options available.
+
+If your installation prefix path is not writable by a regular user,
+you may need to use sudo or su to run the "make install" step.  For
+example:
+
+$ sudo make install |& tee install.out
+[sudo] password for jsquyres: <enter your password here>
+...lots of output...
+
+Finally, note that VPATH builds are fully supported.  For example:
+
+$ tar xf openmpi-<version>.tar.bz2
+$ cd openmpi-<version>
+$ mkdir build
+$ cd build
+$ ../configure --prefix=<path> |& tee config.out
+...etc.
+
+The rest of this README file contains:
+
+- General release notes about Open MPI, including information about
+  platform, compiler, and run-time support, MPI and OpenSHMEM
+  functionality, network support, and MPI extensions.
+- Detailed information on building and installing Open MPI.
+- Open MPI version and library numbering policies, including how those
+  are related to backwards compatibility guarantees.
+- Information on how to both query and validate your Open MPI
+  installation.
+- Description of Open MPI extensions.
+- Examples showing how to compile and run Open MPI applications.
+- Summary information on the various plugin frameworks inside Open
+  MPI and OpenSHMEM.
+
+===========================================================================
+
 The following abbreviated list of release notes applies to this code
 base as of this writing (March 2017):
 
@@ -139,6 +192,15 @@ General notes
   - Problems have been reported when building Open MPI on FreeBSD 11.1
     using the clang-4.0 system compiler. A workaround is to build
     Open MPI using the GNU compiler.
+
+- Open MPI has taken some steps towards Reproducible Builds
+  (https://reproducible-builds.org/).  Specifically, Open MPI's
+  "configure" and "make" process, by default, records some
+  system-specific information such as the hostname where Open MPI was
+  built and the username who built it.  If you desire a Reproducible
+  Build, set the $USER and $HOSTNAME environment variables before
+  invoking "configure" and "make", and Open MPI will use those values
+  instead of invoking "whoami" and/or "hostname", respectively.
 
 Platform Notes
 --------------
@@ -527,7 +589,7 @@ MPI Functionality and Features
   All that being said, if you are unable to immediately update your
   application to stop using these legacy MPI-1 symbols, you can
   re-enable them in mpi.h by configuring Open MPI with the
-  --enable-mpi-compatibility flag.
+  --enable-mpi1-compatibility flag.
 
 - Rank reordering support is available using the TreeMatch library. It
   is activated for the graph and dist_graph topologies.
@@ -561,7 +623,6 @@ MPI Functionality and Features
       - portals4
 
   (2) The ob1 PML and the following BTLs support MPI_THREAD_MULTIPLE:
-      - openib (see exception below)
       - self
       - sm
       - smcuda
@@ -569,10 +630,6 @@ MPI Functionality and Features
       - ugni
       - usnic
       - vader (shared memory)
-
-  The openib BTL's RDMACM based connection setup mechanism is also not
-  thread safe.  The default UDCM method should be used for
-  applications requiring MPI_THREAD_MULTIPLE support.
 
   Currently, MPI File operations are not thread safe even if MPI is
   initialized for MPI_THREAD_MULTIPLE support.
@@ -732,7 +789,8 @@ Network Support
 - In prior versions of Open MPI, InfiniBand and RoCE support was
   provided through the openib BTL and ob1 PML plugins.  Starting with
   Open MPI 4.0.0, InfiniBand support through the openib plugin is both
-  deprecated and superseded by the ucx PML component.
+  deprecated and superseded by the ucx PML component.  The openib BTL
+  was removed in Open MPI v5.0.0.
 
   While the openib BTL depended on libibverbs, the UCX PML depends on
   the UCX library.
@@ -746,15 +804,6 @@ Network Support
   "--mca pml ucx" for MPI point-to-point operations, "--mca spml ucx"
   for OpenSHMEM support, and "--mca osc ucx" for MPI RMA (one-sided)
   operations.
-
-- Although the ob1 PML+openib BTL is still the default for iWARP and
-  RoCE devices, it will reject InfiniBand defaults (by default) so
-  that they will use the ucx PML.  If using the openib BTL is still
-  desired, set the following MCA parameters:
-
-  # Note that "vader" is Open MPI's shared memory BTL
-  $ mpirun --mca pml ob1 --mca btl openib,vader,self \
-        --mca btl_openib_allow_ib 1 ...
 
 - The usnic BTL is support for Cisco's usNIC device ("userspace NIC")
   on Cisco UCS servers with the Virtualized Interface Card (VIC).
@@ -788,8 +837,8 @@ Network Support
 
     http://lwn.net/Articles/343351/
 
-- The use of fork() with OpenFabrics-based networks (i.e., the openib
-  BTL) is only partially supported, and only on Linux kernels >=
+- The use of fork() with OpenFabrics-based networks (i.e., the UCX
+  PML) is only partially supported, and only on Linux kernels >=
   v2.6.15 with libibverbs v1.1 or later (first released as part of
   OFED v1.2), per restrictions imposed by the OFED network stack.
 
@@ -816,14 +865,18 @@ Open MPI Extensions
 
 - The following extensions are included in this version of Open MPI:
 
-  - pcollreq: Provides routines for persistent collective
-    communication operations and persistent neighborhood collective
-    communication operations, which are proposed in the MPI Forum as
-    of June 2018.  The function names are prefixed with MPIX_ instead
-    of MPI_, like MPIX_Barrier_init, because they are not standardized
-    yet.  Future versions of Open MPI will switch to the MPI_ prefix
-    once the MPI Standard which includes this feature is published.
-    See their man page for more details.
+  - pcollreq: Provides routines for persistent collective communication
+    operations and persistent neighborhood collective communication
+    operations, which are planned to be included in the next MPI
+    Standard after MPI-3.1 as of Nov. 2018.  The function names are
+    prefixed with MPIX_ instead of MPI_, like MPIX_Barrier_init,
+    because they are not standardized yet.  Future versions of Open MPI
+    will switch to the MPI_ prefix once the MPI Standard which includes
+    this feature is published.  See their man page for more details.
+  - shortfloat: Provides MPI datatypes MPIX_C_FLOAT16, MPIX_SHORT_FLOAT,
+    MPIX_SHORT_FLOAT, and MPIX_CXX_SHORT_FLOAT_COMPLEX if corresponding
+    language types are available. See ompi/mpiext/shortfloat/README.txt
+    for details.
   - affinity: Provides the OMPI_Affinity_str() routine on retrieving
     a string that contains what resources a process is bound to.  See
     its man page for more details.
@@ -857,6 +910,18 @@ shell$ make [-j N] all install
 There are many available configure options (see "./configure --help"
 for a full list); a summary of the more commonly used ones is included
 below.
+
+NOTE: if you are building Open MPI on a network filesystem, the
+      machine you on which you are building *must* be
+      time-synchronized with the file server.  Specifically: Open
+      MPI's build system *requires* accurate filesystem timestamps.
+      If your "make" output includes warning about timestamps in the
+      future or runs GNU Automake, Autoconf, and/or Libtool, this is
+      *not normal*, and you may have an invalid build.  Ensure that
+      the time on your build machine is synchronized with the time on
+      your file server, or build on a local filesystem.  Then remove
+      the Open MPI source directory and start over (e.g., by
+      re-extracting the Open MPI tarball).
 
 Note that for many of Open MPI's --with-<foo> options, Open MPI will,
 by default, search for header files and/or libraries for <foo>.  If
@@ -1131,51 +1196,6 @@ NETWORKING SUPPORT / OPTIONS
 
 --with-usnic
   Abort configure if Cisco usNIC support cannot be built.
-
---with-verbs=<directory>
-  Specify the directory where the verbs (also known as OpenFabrics
-  verbs, or Linux verbs, and previously known as OpenIB) libraries and
-  header files are located.  This option is generally only necessary
-  if the verbs headers and libraries are not in default
-  compiler/linker search paths.
-
-  The Verbs library usually implies operating system bypass networks,
-  such as InfiniBand, usNIC, iWARP, and RoCE (aka "IBoIP").
-
---with-verbs-libdir=<directory>
-  Look in directory for the verbs libraries.  By default, Open MPI
-  will look in <verbs_directory>/lib and <verbs_ directory>/lib64,
-  which covers most cases.  This option is only needed for special
-  configurations.
-
---with-verbs-usnic
-  Note that this option is no longer necessary in recent Linux distro
-  versions.  If your Linux distro uses the "rdma-core" package (instead
-  of a standalone "libibverbs" package), not only do you not need this
-  option, you shouldn't use it, either.  More below.
-
-  This option will activate support in Open MPI for disabling a
-  dire-sounding warning message from libibverbs that Cisco usNIC
-  devices are not supported (because Cisco usNIC devices are supported
-  through libfabric, not libibverbs).  This libibverbs warning can
-  also be suppressed by installing the "no op" libusnic_verbs plugin
-  for libibverbs (see https://github.com/cisco/libusnic_verbs, or
-  download binaries from cisco.com).
-
-  This option is disabled by default for two reasons:
-
-  1. It causes libopen-pal.so to depend on libibverbs.so, which is
-     undesirable to many downstream packagers.
-  2. As mentioned above, recent versions of the libibverbs library
-     (included in the "rdma-core" package) do not have the bug that
-     will emit dire-sounding warnings about usnic devices.  Indeed,
-     the --with-verbs-usnic option will enable code in Open MPI that
-     is actually incompatible with rdma-core (i.e., cause Open MPI to
-     fail to compile).
-
-   If you enable --with-verbs-usnic and your system uses the rdma-core
-   package, configure will safely abort with a helpful message telling
-   you that you should not use --with-verbs-usnic.
 
 
 RUN-TIME SYSTEM SUPPORT

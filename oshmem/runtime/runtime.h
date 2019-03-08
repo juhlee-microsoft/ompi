@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2013      Mellanox Technologies, Inc.
  *                         All rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -23,7 +25,6 @@
 #include "opal/class/opal_list.h"
 #include "opal/class/opal_hash_table.h"
 
-#include "orte/runtime/orte_globals.h"
 #include "ompi/include/mpi.h"
 #include <pthread.h>
 
@@ -153,8 +154,8 @@ OSHMEM_DECLSPEC int oshmem_shmem_register_params(void);
 #define RUNTIME_CHECK_ERROR(...)                                    \
     do {                                                            \
         fprintf(stderr, "[%s]%s[%s:%d:%s] ",                        \
-                orte_process_info.nodename,                         \
-                ORTE_NAME_PRINT(ORTE_PROC_MY_NAME),                 \
+                ompi_process_info.nodename,                         \
+                OMPI_NAME_PRINT(OMPI_PROC_MY_NAME),                 \
                 __FILE__, __LINE__, __func__);                      \
         fprintf(stderr, __VA_ARGS__);                               \
     } while(0);
@@ -184,7 +185,7 @@ OSHMEM_DECLSPEC int oshmem_shmem_register_params(void);
  */
 #define RUNTIME_CHECK_PE(x)    \
     if (OPAL_UNLIKELY(((x) < 0) ||                                                      \
-                      ((int)(x) > (int)(orte_process_info.num_procs - 1))))             \
+                      ((int)(x) > (int)(ompi_process_info.num_procs - 1))))             \
     {                                                                                   \
         RUNTIME_CHECK_ERROR("Target PE #%d is not in valid range\n", (x));              \
         oshmem_shmem_abort(-1);                                                         \
@@ -196,6 +197,13 @@ OSHMEM_DECLSPEC int oshmem_shmem_register_params(void);
 #include "oshmem/mca/memheap/memheap.h"
 #define RUNTIME_CHECK_ADDR(x)    \
     if (OPAL_UNLIKELY(!MCA_MEMHEAP_CALL(is_symmetric_addr((x)))))        \
+    {                                                                                   \
+        RUNTIME_CHECK_ERROR("Required address %p is not in symmetric space\n", ((void*)x));    \
+        oshmem_shmem_abort(-1);                                                         \
+    }
+/* Check if address is in symmetric space or size is zero */
+#define RUNTIME_CHECK_ADDR_SIZE(x,s)    \
+    if (OPAL_UNLIKELY((s) && !MCA_MEMHEAP_CALL(is_symmetric_addr((x)))))        \
     {                                                                                   \
         RUNTIME_CHECK_ERROR("Required address %p is not in symmetric space\n", ((void*)x));    \
         oshmem_shmem_abort(-1);                                                         \
@@ -212,6 +220,7 @@ OSHMEM_DECLSPEC int oshmem_shmem_register_params(void);
 #define RUNTIME_CHECK_INIT()
 #define RUNTIME_CHECK_PE(x)
 #define RUNTIME_CHECK_ADDR(x)
+#define RUNTIME_CHECK_ADDR_SIZE(x,s)
 #define RUNTIME_CHECK_WITH_MEMHEAP_SIZE(x)
 
 #endif  /* OSHMEM_PARAM_CHECK */

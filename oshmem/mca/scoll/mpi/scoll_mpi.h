@@ -1,10 +1,12 @@
-/**
-  Copyright (c) 2011 Mellanox Technologies. All rights reserved.
-  $COPYRIGHT$
-
-  Additional copyrights may follow
-
-  $HEADER$
+/*
+ * Copyright (c) 2011      Mellanox Technologies. All rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
+ * $COPYRIGHT$
+ *
+ * Additional copyrights may follow
+ *
+ * $HEADER$
  */
 
 #ifndef MCA_SCOLL_MPI_H
@@ -19,8 +21,6 @@
 #include "oshmem/util/oshmem_util.h"
 #include "oshmem/proc/proc.h"
 #include "ompi/communicator/communicator.h"
-
-#include "orte/runtime/orte_globals.h"
 
 #include "scoll_mpi_debug.h"
 BEGIN_C_DECLS
@@ -90,6 +90,7 @@ int mca_scoll_mpi_broadcast(struct oshmem_group_t *group,
                             const void *source,
                             size_t nlong,
                             long *pSync,
+                            bool nlong_type,
                             int alg);
 
 int mca_scoll_mpi_collect(struct oshmem_group_t *group,

@@ -15,8 +15,8 @@
  * Copyright (c) 2012-2016 Los Alamos National Security, LLC. All rights
  *                         reserved.
  * Copyright (c) 2016      Intel, Inc. All rights reserved.
- * Copyright (c) 2016      Research Organization for Information Science
- *                         and Technology (RIST). All rights reserved.
+ * Copyright (c) 2016-2019 Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  *
  * $COPYRIGHT$
  *
@@ -264,12 +264,18 @@ static void mca_mpool_hugepage_find_hugepages (void) {
 
         hp->path = strdup (mntent->mnt_dir);
         hp->page_size = page_size;
-
-        OPAL_OUTPUT_VERBOSE((MCA_BASE_VERBOSE_INFO, opal_mpool_base_framework.framework_output,
-                             "found huge page with size = %lu, path = %s, mmap flags = 0x%x",
-                             hp->page_size, hp->path, hp->mmap_flags));
-
-        opal_list_append (&mca_mpool_hugepage_component.huge_pages, &hp->super);
+        
+        if(0 == access (hp->path, R_OK | W_OK)){        
+            opal_output_verbose (MCA_BASE_VERBOSE_INFO, opal_mpool_base_framework.framework_output,
+                                 "found huge page with size = %lu, path = %s, mmap flags = 0x%x, adding to list",
+                                 hp->page_size, hp->path, hp->mmap_flags);
+            opal_list_append (&mca_mpool_hugepage_component.huge_pages, &hp->super);
+        } else {
+            opal_output_verbose (MCA_BASE_VERBOSE_INFO, opal_mpool_base_framework.framework_output,
+                                 "found huge page with size = %lu, path = %s, mmap flags = 0x%x, with invalid " 
+                                 "permissions, skipping", hp->page_size, hp->path, hp->mmap_flags);
+            OBJ_RELEASE(hp);
+        }        
     }
 
     opal_list_sort (&mca_mpool_hugepage_component.huge_pages, page_compare);

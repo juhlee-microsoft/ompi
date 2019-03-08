@@ -17,6 +17,9 @@
  *                         reserved.
  * Copyright (c) 2015      Research Organization for Information Science
  *                         and Technology (RIST). All rights reserved.
+ * Copyright (c) 2018      Triad National Security, LLC. All rights
+ *                         reserved.
+ * Copyright (c) 2018      FUJITSU LIMITED.  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -28,6 +31,7 @@
 
 #include <stddef.h>
 
+#include "opal/runtime/opal.h"
 #include "opal/util/arch.h"
 #include "opal/util/output.h"
 #include "opal/datatype/opal_datatype_internal.h"
@@ -72,6 +76,7 @@ OPAL_DECLSPEC const opal_datatype_t opal_datatype_float4 =      OPAL_DATATYPE_IN
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_float8 =      OPAL_DATATYPE_INITIALIZER_FLOAT8(0);
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_float12 =     OPAL_DATATYPE_INITIALIZER_FLOAT12(0);
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_float16 =     OPAL_DATATYPE_INITIALIZER_FLOAT16(0);
+OPAL_DECLSPEC const opal_datatype_t opal_datatype_short_float_complex = OPAL_DATATYPE_INITIALIZER_SHORT_FLOAT_COMPLEX(0);
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_float_complex = OPAL_DATATYPE_INITIALIZER_FLOAT_COMPLEX(0);
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_double_complex = OPAL_DATATYPE_INITIALIZER_DOUBLE_COMPLEX(0);
 OPAL_DECLSPEC const opal_datatype_t opal_datatype_long_double_complex = OPAL_DATATYPE_INITIALIZER_LONG_DOUBLE_COMPLEX(0);
@@ -102,6 +107,13 @@ OPAL_DECLSPEC const size_t opal_datatype_local_sizes[OPAL_DATATYPE_MAX_PREDEFINE
     [OPAL_DATATYPE_FLOAT8] = 8,     /* sizeof (float8) */
     [OPAL_DATATYPE_FLOAT12] = 12,   /* sizeof (float12) */
     [OPAL_DATATYPE_FLOAT16] = 16,   /* sizeof (float16) */
+#if defined(HAVE_SHORT_FLOAT__COMPLEX)
+    [OPAL_DATATYPE_SHORT_FLOAT_COMPLEX] = sizeof(short float _Complex),
+#elif defined(HAVE_OPAL_SHORT_FLOAT_COMPLEX_T)
+    [OPAL_DATATYPE_SHORT_FLOAT_COMPLEX] = sizeof(opal_short_float_complex_t),
+#else
+    [OPAL_DATATYPE_SHORT_FLOAT_COMPLEX] = 4, /* typical sizeof(short float _Complex) */
+#endif
     [OPAL_DATATYPE_FLOAT_COMPLEX] = sizeof(float _Complex),
     [OPAL_DATATYPE_DOUBLE_COMPLEX] = sizeof(double _Complex),
     [OPAL_DATATYPE_LONG_DOUBLE_COMPLEX] = sizeof(long double _Complex),
@@ -133,6 +145,7 @@ OPAL_DECLSPEC const opal_datatype_t* opal_datatype_basicDatatypes[OPAL_DATATYPE_
     [OPAL_DATATYPE_FLOAT8] = &opal_datatype_float8,
     [OPAL_DATATYPE_FLOAT12] = &opal_datatype_float12,
     [OPAL_DATATYPE_FLOAT16] = &opal_datatype_float16,
+    [OPAL_DATATYPE_SHORT_FLOAT_COMPLEX] = &opal_datatype_short_float_complex,
     [OPAL_DATATYPE_FLOAT_COMPLEX] = &opal_datatype_float_complex,
     [OPAL_DATATYPE_DOUBLE_COMPLEX] = &opal_datatype_double_complex,
     [OPAL_DATATYPE_LONG_DOUBLE_COMPLEX] = &opal_datatype_long_double_complex,
@@ -204,6 +217,21 @@ int opal_datatype_register_params(void)
     return OPAL_SUCCESS;
 }
 
+static void opal_datatype_finalize (void)
+{
+    /* As the synonyms are just copies of the internal data we should not free them.
+     * Anyway they are over the limit of OPAL_DATATYPE_MAX_PREDEFINED so they will never get freed.
+     */
+
+    /* As they are statically allocated they cannot be released. But we
+     * can call OBJ_DESTRUCT, just to free all internally allocated ressources.
+     */
+    /* clear all master convertors */
+    opal_convertor_destroy_masters();
+
+    opal_output_close (opal_datatype_dfd);
+    opal_datatype_dfd = -1;
+}
 
 int32_t opal_datatype_init( void )
 {
@@ -242,27 +270,7 @@ int32_t opal_datatype_init( void )
         opal_output_set_verbosity(opal_datatype_dfd, opal_ddt_verbose);
     }
 
-    return OPAL_SUCCESS;
-}
-
-
-int32_t opal_datatype_finalize( void )
-{
-    /* As the synonyms are just copies of the internal data we should not free them.
-     * Anyway they are over the limit of OPAL_DATATYPE_MAX_PREDEFINED so they will never get freed.
-     */
-
-    /* As they are statically allocated they cannot be released. But we
-     * can call OBJ_DESTRUCT, just to free all internally allocated ressources.
-     */
-#if defined(VERBOSE)
-    if( opal_datatype_dfd != -1 )
-        opal_output_close( opal_datatype_dfd );
-    opal_datatype_dfd = -1;
-#endif /* VERBOSE */
-
-    /* clear all master convertors */
-    opal_convertor_destroy_masters();
+    opal_finalize_register_cleanup (opal_datatype_finalize);
 
     return OPAL_SUCCESS;
 }

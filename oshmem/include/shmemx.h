@@ -171,14 +171,6 @@ OSHMEM_DECLSPEC void shmemx_int64_prod_to_all(int64_t *target, const int64_t *so
 /*
  * Backward compatibility section
  */
-#define shmem_int16_p               shmemx_int16_p
-#define shmem_int32_p               shmemx_int32_p
-#define shmem_int64_p               shmemx_int64_p
-
-#define shmem_int16_g               shmemx_int16_g
-#define shmem_int32_g               shmemx_int32_g
-#define shmem_int64_g               shmemx_int64_g
-
 #define shmem_int32_swap            shmemx_int32_swap
 #define shmem_int64_swap            shmemx_int64_swap
 
@@ -204,8 +196,6 @@ OSHMEM_DECLSPEC void shmemx_int64_prod_to_all(int64_t *target, const int64_t *so
 
 #define shmem_int32_wait            shmemx_int32_wait
 #define shmem_int64_wait            shmemx_int64_wait
-#define shmem_int32_wait_until      shmemx_int32_wait_until
-#define shmem_int64_wait_until      shmemx_int64_wait_until
 
 #define shmem_int16_and_to_all      shmemx_int16_and_to_all
 #define shmem_int32_and_to_all      shmemx_int32_and_to_all

@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2013-2018 Mellanox Technologies, Inc.
  *                         All rights reserved.
+ * Copyright (c) 2019      Research Organization for Information Science
+ *                         and Technology (RIST).  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -11,8 +13,6 @@
 
 #include "oshmem/constants.h"
 #include "oshmem/include/shmem.h"
-
-#include "orte/mca/grpcomm/grpcomm.h"
 
 #include "oshmem/runtime/runtime.h"
 
@@ -39,10 +39,10 @@ static void _shmem_collect(void *target,
                       long *pSync)                              \
 {                                                               \
     RUNTIME_CHECK_INIT();                                       \
-    RUNTIME_CHECK_ADDR(target);                                 \
-    RUNTIME_CHECK_ADDR(source);                                 \
+    RUNTIME_CHECK_ADDR_SIZE(target, nelems);                    \
+    RUNTIME_CHECK_ADDR_SIZE(source, nelems);                    \
                                                                 \
-    _shmem_collect( target, source, nelems * element_size,     \
+    _shmem_collect( target, source, nelems * element_size,      \
                      PE_start, logPE_stride, PE_size,           \
                      pSync,                                     \
                      nelems_type);                              \
